@@ -3,6 +3,14 @@
     "Nostr_Relay_backend": {
       "main": "src/Nostr_Relay_backend/main.mo",
       "type": "motoko"
+    },
+    "index": {
+      "type": "motoko",
+      "main": "src/index/index.mo"
+    },
+    "node": {
+      "type": "motoko",
+      "main": "src/node/node.mo"
     }
   },
   "defaults": {
