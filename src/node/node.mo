@@ -43,6 +43,8 @@ shared ({ caller = owner }) actor class Node({
   public func addEntity(sk : Text, eventType : EventType) : async Text {
     switch (eventType) {
       case (#NIPS01(nip)) {
+        let created_at = Nat64.toText(nip.created_at);
+        let _sk = "event:" # created_at # ":" # nip.id;
         let temp : Buffer.Buffer<(Text, Entity.AttributeValueRBTreeValue)> = Buffer.fromArray([]);
         for (tag in nip.tags.vals()) {
           if (tag.size() > 0) {
@@ -57,7 +59,7 @@ shared ({ caller = owner }) actor class Node({
         await* CanDB.put(
           db,
           {
-            sk = sk;
+            sk = _sk;
             attributes = [
               ("id", #text(nip.id)),
               ("pubkey", #text(nip.pubkey)),
@@ -74,4 +76,74 @@ shared ({ caller = owner }) actor class Node({
       };
     };
   };
+
+  private func _fetchEvents(skLowerBound : Text, skUpperBound : Text, limit:Nat) : {
+        events : [EventType];
+        sk : ?Text;
+    } {
+        var events : Buffer.Buffer<EventType> = Buffer.fromArray([]);
+        let result = CanDB.scan(
+            db,
+            {
+                skLowerBound = "event:" # skLowerBound;
+                skUpperBound = "event:" # skUpperBound;
+                limit = limit;
+                ascending = ?false;
+            },
+        );
+
+        for (obj in result.entities.vals()) {
+            let event = _unwrapEvent(obj);
+            switch (event) {
+                case (?event) {
+                  events.add(event)
+                };
+                case (null) {
+
+                };
+            };
+        };
+        {
+            events = Buffer.toArray(events);
+            sk = result.nextKey;
+        };
+    };
+
+    private func _unwrapEvent(entity: Entity.Entity): ?EventType {
+        let { sk; attributes } = entity;
+        let id = Entity.getAttributeMapValueForKey(attributes, "id");
+        let pubkey = Entity.getAttributeMapValueForKey(attributes, "pubkey");
+        let created_at = Entity.getAttributeMapValueForKey(attributes, "created_at");
+        let kind = Entity.getAttributeMapValueForKey(attributes, "kind");
+        let tags = Entity.getAttributeMapValueForKey(attributes, "tags");
+        let content = Entity.getAttributeMapValueForKey(attributes, "content");
+        let sig = Entity.getAttributeMapValueForKey(attributes, "sig");
+
+        switch(id, pubkey, created_at, kind, tags, content, sig) {
+            case (
+                ?(#text(id)),
+                ?(#text(pubkey)),
+                ?(#int(created_at)),
+                ?(#int(kind)),
+                ?(#tree(tags)),
+                ?(#text(content)),
+                ?(#text(sig)),
+            ) 
+            { 
+                 let result = {
+                    id = id;
+                    pubkey = pubkey;
+                    created_at = Nat64.fromIntWrap(created_at);
+                    kind = Nat64.fromIntWrap(kind);
+                    tags = [];
+                    content = content;
+                    sig = sig;
+                 };
+                 ?#NIPS01(result)
+            };
+            case _ { 
+                null 
+            }
+        };
+    };
 };
