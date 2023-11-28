@@ -9,22 +9,22 @@ import Utils "common/utils";
 
 actor class NostrRelay() = this {
   // Paste here the principal of the gateway obtained when running the gateway
-   let gateway_principal : Text = "3656s-3kqlj-dkm5d-oputg-ymybu-4gnuq-7aojd-w2fzw-5lfp2-4zhx3-4ae";
+  let gateway_principal : Text = "3656s-3kqlj-dkm5d-oputg-ymybu-4gnuq-7aojd-w2fzw-5lfp2-4zhx3-4ae";
 
   // let gateway_principal : Text = "4vckx-bhbmz-uu3yz-ll4ug-alzch-fifj3-r4ufc-g4nfn-7fz5s-xwo2m-pqe";
 
- type AppMessage = {
+  type AppMessage = {
     message : Text;
   };
 
   var ws_state = IcWebSocketCdk.IcWebSocketState([gateway_principal]);
 
   /// A custom function to send the message to the client
-  func send_app_message(client_principal : IcWebSocketCdk.ClientPrincipal, msg : AppMessage): async () {
+  func send_app_message(client_principal : IcWebSocketCdk.ClientPrincipal, msg : AppMessage) : async () {
     Debug.print("Sending message: " # debug_show (msg));
 
     // here we call the ws_send from the CDK!!
-    switch (await IcWebSocketCdk.ws_send(ws_state, client_principal, to_candid(msg))) {
+    switch (await IcWebSocketCdk.ws_send(ws_state, client_principal, to_candid (msg))) {
       case (#Err(err)) {
         Debug.print("Could not send message:" # debug_show (#Err(err)));
       };
@@ -43,29 +43,18 @@ actor class NostrRelay() = this {
   /// Note that the message from the WebSocket is serialized in CBOR, so we have to deserialize it first
 
   func on_message(args : IcWebSocketCdk.OnMessageCallbackArgs) : async () {
-    let message = Text.decodeUtf8(args.message);
-    switch(message){
-      case(?message){
-        let new_msg = {
-          message = await Utils.handleMessage(message);
-        };
-        Debug.print("Received message: " # debug_show (new_msg));
-        await send_app_message(args.client_principal, new_msg);
-      };
-      case(_){
-        let new_msg = {
-          message = "[\"NOTICE\",\"BadRequest\"]";
-        };
-        await send_app_message(args.client_principal, new_msg);
-      }
+    let new_msg = {
+      message = await Utils.handleMessage(args.message);
     };
+    Debug.print("Received message: " # debug_show (new_msg));
+    await send_app_message(args.client_principal, new_msg);
   };
 
   func on_close(args : IcWebSocketCdk.OnCloseCallbackArgs) : async () {
     Debug.print("Client " # debug_show (args.client_principal) # " disconnected");
   };
 
- let handlers = IcWebSocketCdk.WsHandlers(
+  let handlers = IcWebSocketCdk.WsHandlers(
     ?on_open,
     ?on_message,
     ?on_close,
@@ -81,7 +70,7 @@ actor class NostrRelay() = this {
 
   system func postupgrade() {
     ws_state := IcWebSocketCdk.IcWebSocketState([gateway_principal]);
-     ws := IcWebSocketCdk.IcWebSocket(ws_state, params);
+    ws := IcWebSocketCdk.IcWebSocket(ws_state, params);
   };
 
   // method called by the WS Gateway after receiving FirstMessage from the client
@@ -95,7 +84,7 @@ actor class NostrRelay() = this {
   };
 
   // method called by the frontend SDK to send a message to the canister
-  public shared ({ caller }) func ws_message(args : IcWebSocketCdk.CanisterWsMessageArguments, msg:? AppMessage) : async IcWebSocketCdk.CanisterWsMessageResult {
+  public shared ({ caller }) func ws_message(args : IcWebSocketCdk.CanisterWsMessageArguments, msg : ?AppMessage) : async IcWebSocketCdk.CanisterWsMessageResult {
     await ws.ws_message(caller, args, msg);
   };
 
