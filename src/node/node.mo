@@ -40,7 +40,7 @@ shared ({ caller = owner }) actor class Node({
   };
 
   /// Example of inserting a static entity into CanDB with an sk provided as a parameter
-  public func addEntity(sk : Text, eventType : EventType) : async Text {
+  public func addEntity(eventType : EventType) : async Text {
     switch (eventType) {
       case (#NIPS01(nip)) {
         let created_at = Nat64.toText(nip.created_at);
@@ -72,12 +72,12 @@ shared ({ caller = owner }) actor class Node({
           },
         );
 
-        "pk=" # db.pk # ", sk=" # sk;
+        "pk=" # db.pk # ", sk=" # _sk;
       };
     };
   };
 
-  private func _fetchEvents(skLowerBound : Text, skUpperBound : Text, limit:Nat) : {
+  public query func fetchEvents(skLowerBound : Text, skUpperBound : Text, limit:Nat) : async {
         events : [EventType];
         sk : ?Text;
     } {
