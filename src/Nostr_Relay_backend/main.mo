@@ -5,6 +5,7 @@ import HashMap "mo:base/HashMap";
 import Buffer "mo:base/Buffer";
 import Blob "mo:base/Blob";
 import Bool "mo:base/Bool";
+import Utils "common/utils";
 
 actor class NostrRelay() = this {
   // Paste here the principal of the gateway obtained when running the gateway
@@ -42,20 +43,22 @@ actor class NostrRelay() = this {
   /// Note that the message from the WebSocket is serialized in CBOR, so we have to deserialize it first
 
   func on_message(args : IcWebSocketCdk.OnMessageCallbackArgs) : async () {
-    let app_msg : ?AppMessage = from_candid(args.message);
-    let new_msg: AppMessage = switch (app_msg) {
-      case (?msg) { 
-        { message = Text.concat(msg.message, " ping") };
+    let message = Text.decodeUtf8(args.message);
+    switch(message){
+      case(?message){
+        let new_msg = {
+          message = await Utils.handleMessage(message);
+        };
+        Debug.print("Received message: " # debug_show (new_msg));
+        await send_app_message(args.client_principal, new_msg);
       };
-      case (null) {
-        Debug.print("Could not deserialize message");
-        return;
-      };
+      case(_){
+        let new_msg = {
+          message = "[\"NOTICE\",\"BadRequest\"]";
+        };
+        await send_app_message(args.client_principal, new_msg);
+      }
     };
-
-    Debug.print("Received message: " # debug_show (new_msg));
-
-    await send_app_message(args.client_principal, new_msg);
   };
 
   func on_close(args : IcWebSocketCdk.OnCloseCallbackArgs) : async () {

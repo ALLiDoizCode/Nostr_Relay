@@ -22,9 +22,9 @@ module {
     public type Event = {
         kind : Nat64;
     };
-    public func _handleMessage(json : Text) : async Text {
+    public func handleMessage(json : Text) : async Text {
         try {
-            let message = await* _messageFromJSON(json);
+            let message = await* _parseMessage(json);
             switch (message[0]) {
                 case ("REQ") await _handleReq(message[1], message[2]);
                 case ("EVENT") await _handleEvent(message[1]);
@@ -67,7 +67,7 @@ module {
         };
     };
 
-    public func _messageFromJSON(json : Text) : async* [Text] {
+    public func _parseMessage(json : Text) : async* [Text] {
         let result = JSON.fromText(json, null);
         switch (result) {
             case (#ok(blob)) {
@@ -79,14 +79,6 @@ module {
             };
             case (#err(value)) throw (Error.reject(value));
         };
-    };
-
-    public func _parseMessage(json : Text) {
-        //'["REQ", "my-sub", {"kinds":[1], "authors":["35d26e4690cbe1"]}]'
-    };
-
-    public func _parseRequest(json : Text) {
-        //'["REQ", "my-sub", {"kinds":[1], "authors":["35d26e4690cbe1"]}]'
     };
 
     public func _parseKind(json : Text): async* Nat64 {
