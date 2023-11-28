@@ -8,7 +8,7 @@ import Buffer "mo:stablebuffer/StableBuffer";
 import Admin "mo:candb/CanDBAdmin";
 import CA "mo:candb/CanisterActions";
 import CanisterMap "mo:candb/CanisterMap";
-import NodeCanister "../node/node";
+import Node "../node/node";
 import Utils "../Utils";
 
 shared ({caller = owner}) actor class IndexCanister() = this {
@@ -27,7 +27,7 @@ shared ({caller = owner}) actor class IndexCanister() = this {
   func createNodeCanister(pk: Text, controllers: ?[Principal]): async Text {
     Debug.print("creating new node canister with pk=" # pk);
     Cycles.add(300_000_000_000);
-    let newNodeCanister = await NodeCanister.NodeCanister({
+    let newNodeCanister = await Node.Node({
       partitionKey = pk;
       scalingOptions = {
         autoScalingHook = autoScaleNodeCanister;
