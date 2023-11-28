@@ -3,25 +3,12 @@
     "Nostr_Relay_backend": {
       "main": "src/Nostr_Relay_backend/main.mo",
       "type": "motoko"
-    },
-    "Nostr_Relay_frontend": {
-      "dependencies": [
-        "Nostr_Relay_backend"
-      ],
-      "frontend": {
-        "entrypoint": "src/Nostr_Relay_frontend/src/index.html"
-      },
-      "source": [
-        "src/Nostr_Relay_frontend/assets",
-        "dist/Nostr_Relay_frontend/"
-      ],
-      "type": "assets"
     }
   },
   "defaults": {
     "build": {
       "args": "",
-      "packtool": ""
+      "packtool": "mops sources"
     }
   },
   "output_env_file": ".env",
